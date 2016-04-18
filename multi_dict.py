@@ -1,4 +1,4 @@
-"""Functions to work with "multi-dimensional dicts"."""
+"""A multi-dimensional dict."""
 
 
 from collections import defaultdict
