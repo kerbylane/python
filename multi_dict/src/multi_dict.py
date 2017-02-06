@@ -2,7 +2,10 @@
 
 from collections import defaultdict
 
-class IncorrectNumberOfArguments(Exception):
+class IncorrectNumberOfKeys(Exception):
+    pass
+
+class InvalidArgument(Exception):
     pass
 
 class MultiDict(object):
@@ -37,15 +40,14 @@ class MultiDict(object):
     
     def __setitem__(self, *args):
         print 'md.__setitems__ args is %s' % str(args)
-        keys = list(args[0])
-        self._checkLength(keys)
+        keys = self._getKeys(args[0])
         
         self._set(keys, args[1])
     
-    def __getitem__(self, keys):
+    def __getitem__(self, *keys):
         print 'md.__getitem__ keys is %s' % str(keys)
-        keys = list(keys)
-        self._checkLength(keys)
+        keys = self._getKeys(keys[0])
+        print 'md.__getitem__ internal keys is %s' % str(keys)
         return self._get(keys)
       
     def __delitem__(self, keys):
@@ -79,6 +81,13 @@ class MultiDict(object):
         for k, v in self._data.iteritems():
             for v_items in v.iteritems():
                 yield [k] + v_items
+                
+    def get(self, *keys):
+        """Returns subdict sharing keys prefix."""
+        if len(keys) > self._levels:
+            raise IncorrectNumberOfKeys("Too many keys submitted, got %d, max is %d" % (len(keys), self._levels))
+        
+        return self._get(keys)
     
     ##################################################
     #
@@ -90,16 +99,26 @@ class MultiDict(object):
     def _checkLength(self, args):
         """Confirm the number of keys submitted matches the number of _levels."""
         if len(args) != self._levels:
-            raise IncorrectNumberOfArguments('Got %d key arguments instead of %d' % (len(args), self._levels))
+            raise IncorrectNumberOfKeys('Got %d key arguments instead of %d' % (len(args), self._levels))
   
+    def _getKeys(self, keys):
+        """Get keys where keys must be specified for each level."""
+        if isinstance(keys, tuple) and len(keys) == self._levels:
+            return list(keys)
+        
+        raise IncorrectNumberOfKeys('Got %d key arguments instead of %d: %s' % (1, self._levels, str(keys)))
+    
     def _set(self, keys, value):
         """Internal version of put() which doesn't check dims to speed insertion of long items."""
         print 'md._set (%d) %s %s' % (self._levels, str(keys), str(value))
         self._data.__getitem__(keys[0])._set(keys[1:], value)
-
     
     def _get(self, keys):
-        return self._data.__getitem__(keys[0])._get(keys[1:])
+        print 'id._get %s' % str(keys)
+        if len(keys) == 1:
+            return self._data.__getitem__(keys[0])
+        else:
+            return self._data.__getitem__(keys[0])._get(keys[1:])
     
     def generate(self, *args):
         '''Returns generator identified by an array of keys.
@@ -131,7 +150,7 @@ class InnerMultiDict(MultiDict):
         return self._data.__getitem__(key[0])
       
     def __delitem__(self, key):
-        self._data.__delitem__(key[0]])
+        self._data.__delitem__(key[0])
     
     def __str__(self):
         return str(dict(self._data))
@@ -140,10 +159,11 @@ class InnerMultiDict(MultiDict):
         return self._data.__len__()
     
     def _set(self, key, value):
-        # print 'id.__set %s %s' % (str(key[0]), str(value))
+        print 'id._set %s %s' % (str(key[0]), str(value))
         self._data.__setitem__(key[0], value)
     
     def _get(self, key):
+        print 'id._get %s' % str(key[0])
         return self._data[key[0]]
     
     def iteritems(self):
