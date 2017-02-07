@@ -74,6 +74,21 @@ class MultiDict3Test(unittest.TestCase):
  
     def testGet(self):
         assert self.md[2, 3] == 23
+        
+    def testLen(self):
+        assert len(self.md) == 6
+ 
+    def testDel(self):
+        del self.md[2, 3]
+        assert len(self.md) == 5
+        
+    def testDelSubDict(self):
+        del self.md[2]
+        assert len(self.md) == 3
+        
+    def testDelLeaf(self):
+        del self.md[2,2]
+        assert len(self.md) == 5
 
 if __name__ == '__main__':
     unittest.main()

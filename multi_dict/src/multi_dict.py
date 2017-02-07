@@ -5,9 +5,6 @@ from collections import defaultdict
 class IncorrectNumberOfKeys(Exception):
     pass
 
-class InvalidArgument(Exception):
-    pass
-
 class MultiDict(object):
     """A multi-dimensional default dict.
     
@@ -23,7 +20,6 @@ class MultiDict(object):
     # Functions to build:
     # For this suppose we have an instance with _levels = 3
     # TODO: delete everything sharing a subset of keys: del md[k1]
-    # TODO: generate everything sharing a subset of keys: get md[k1]
     
     def __init__(self, levels, default):
         """An instance whose number of keys is 'levels' and whose values are created by the
@@ -39,24 +35,25 @@ class MultiDict(object):
             self._data = defaultdict(lambda: MultiDict(self._levels - 1, default))
     
     def __setitem__(self, *args):
-        print 'md.__setitems__ args is %s' % str(args)
-        keys = self._getKeys(args[0])
-        
-        self._set(keys, args[1])
+        # print 'md.__setitems__ args is %s' % str(args)
+        # keys = self._getKeys(args[0])
+        self._checkLength(args[0])
+        self._set(args[0], args[1])
     
     def __getitem__(self, *keys):
-        print 'md.__getitem__ keys is %s' % str(keys)
-        keys = self._getKeys(keys[0])
-        print 'md.__getitem__ internal keys is %s' % str(keys)
-        return self._get(keys)
+        # print 'md.__getitem__ keys is %s' % str(keys)
+        self._checkLength(keys[0])
+        return self._get(keys[0])
       
     def __delitem__(self, keys):
-        keys = list(keys)
-        del self._data[keys[0]][ keys[1:] ]
-        
-        # If the sub-dict is empty dump it
-        if len(self._data[keys[0]]) == 0:
-            self._data.__delitem__(keys[0])
+        if isinstance(keys, tuple):
+            del self._data[keys[0]][ keys[1:] ]
+            # If the sub-dict is empty dump it
+            if len(self._data[keys[0]]) == 0:
+                self._data.__delitem__(keys[0])
+        else:
+            del self._data[keys]
+    
     
     def __str__(self):
         # This is really complicated.  What are we doing?
@@ -65,8 +62,8 @@ class MultiDict(object):
         # join all of the strings for the item with ':'
         # join all of the items' strings with ', '
         # surround the whole thing in {}.
-        # TODO: could we do this by calling str on the whole thing?
-        return u'{%s}' % (u', '.join([u'%s:%s' % (str(k), str(v)) for k,v in self._data.iteritems()]))
+        
+        return u'{%s}' % u', '.join([u'%s:%s' % (str(k), str(v)) for k,v in self._data.iteritems()])
     
     def __repr__(self):
         return self.__str__()
@@ -77,7 +74,6 @@ class MultiDict(object):
     
     def iteritems(self):
         """Return items from this object."""
-        # TODO: why not make the generator a version of this that has been given a list of keys?
         for k, v in self._data.iteritems():
             for v_items in v.iteritems():
                 yield [k] + v_items
@@ -98,36 +94,20 @@ class MultiDict(object):
     
     def _checkLength(self, args):
         """Confirm the number of keys submitted matches the number of _levels."""
-        if len(args) != self._levels:
-            raise IncorrectNumberOfKeys('Got %d key arguments instead of %d' % (len(args), self._levels))
+        if not (isinstance(args, tuple) and len(args) == self._levels):
+            raise IncorrectNumberOfKeys('Got key argument %d, length should be %d' % (args, self._levels))
   
-    def _getKeys(self, keys):
-        """Get keys where keys must be specified for each level."""
-        if isinstance(keys, tuple) and len(keys) == self._levels:
-            return list(keys)
-        
-        raise IncorrectNumberOfKeys('Got %d key arguments instead of %d: %s' % (1, self._levels, str(keys)))
-    
     def _set(self, keys, value):
-        """Internal version of put() which doesn't check dims to speed insertion of long items."""
+        """Internal version of set() which doesn't check dims to speed insertion of long items."""
         print 'md._set (%d) %s %s' % (self._levels, str(keys), str(value))
         self._data.__getitem__(keys[0])._set(keys[1:], value)
     
     def _get(self, keys):
-        print 'id._get %s' % str(keys)
+        print 'md._get %s' % str(keys)
         if len(keys) == 1:
             return self._data.__getitem__(keys[0])
         else:
             return self._data.__getitem__(keys[0])._get(keys[1:])
-    
-    def generate(self, *args):
-        '''Returns generator identified by an array of keys.
-        
-        If the number of keys provided is lower than the number of dimensions 
-        then the entries sharing the keys provided are returned. 
-        '''
-        # TODO: implement me, or alter iteritems to support this case
-        pass
 
 
 class InnerMultiDict(MultiDict):
