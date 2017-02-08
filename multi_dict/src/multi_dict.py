@@ -17,10 +17,6 @@ class MultiDict(object):
     # include tests for key length.  But they call internal methods that no longer
     # test the arguments for faster performance.
     
-    # Functions to build:
-    # For this suppose we have an instance with _levels = 3
-    # TODO: delete everything sharing a subset of keys: del md[k1]
-    
     def __init__(self, levels, default):
         """An instance whose number of keys is 'levels' and whose values are created by the
         constructor 'default'.
@@ -54,7 +50,6 @@ class MultiDict(object):
         else:
             del self._data[keys]
     
-    
     def __str__(self):
         # This is really complicated.  What are we doing?
         # Use iteritems() to get all of the items
@@ -84,6 +79,14 @@ class MultiDict(object):
             raise IncorrectNumberOfKeys("Too many keys submitted, got %d, max is %d" % (len(keys), self._levels))
         
         return self._get(keys)
+    
+    def keys(self):
+        for entry in self.iteritems():
+            yield entry[:-1]
+    
+    def values(self):
+        for entry in self.iteritems():
+            yield entry[-1]
     
     ##################################################
     #
