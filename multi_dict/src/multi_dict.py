@@ -142,11 +142,11 @@ class InnerMultiDict(MultiDict):
         return self._data.__len__()
     
     def _set(self, key, value):
-        print 'id._set %s %s' % (str(key[0]), str(value))
+        # print 'id._set %s %s' % (str(key[0]), str(value))
         self._data.__setitem__(key[0], value)
     
     def _get(self, key):
-        print 'id._get %s' % str(key[0])
+        # print 'id._get %s' % str(key[0])
         return self._data[key[0]]
     
     def iteritems(self):
